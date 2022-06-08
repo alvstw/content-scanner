@@ -1,5 +1,6 @@
 from typing import Any
 
+from src import context
 from src.engine.search_engine.file_search_engine import FileSearchEngine
 
 
@@ -8,10 +9,11 @@ class PlainTextFileSearchEngine(FileSearchEngine):
         self.caseSensitive = caseSensitive
         # noinspection PyBroadException
         try:
-            with open(path, 'r') as file:
+            with open(path, 'r', encoding='utf8') as file:
                 self.content = file.read()
                 return True
-        except Exception:
+        except Exception as err:
+            context.messageHelper.log(f'Failed to read {path}: {err}')
             return False
 
     def contains(self, searchString: Any) -> bool:
