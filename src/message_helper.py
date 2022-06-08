@@ -7,6 +7,7 @@ from src.constant.general import FilePath, LoggingLevel
 from src.library.helper.console_helper import ConsoleHelper
 from src.library.helper.file_helper import FileHelper
 from src.library.helper.helper import Helper
+from src.library.helper.string_helper import StringHelper
 
 
 class MessageHelper:
@@ -67,6 +68,8 @@ class MessageHelper:
 
     def log(self, message: str, level: str = LoggingLevel.INFO, module: str = '') -> None:
         logger = self.logger
+
+        message = StringHelper.filterString(message)
 
         formattedModule = ''
         if module != '':
