@@ -16,5 +16,5 @@ class ReportService:
             'Matched File': matchedList
         }
         df = pd.DataFrame(data=dataDict)
-        filePath = FileHelper.joinPath(FilePath.DATA, TimeHelper.formatTime())
+        filePath = FileHelper.joinPath(FilePath.DATA, TimeHelper.formatTime(fmt='%Y-%m-%d %H%M'))
         df.to_csv(f'{filePath}.csv')

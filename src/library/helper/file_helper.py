@@ -57,7 +57,7 @@ class FileHelper:
     @staticmethod
     def getFileExtension(filePath: str) -> str:
         _, fileExtension = os.path.splitext(filePath)
-        return fileExtension
+        return fileExtension.lower()
 
     @staticmethod
     def getAbsolutePath(relativePath: str) -> str:
