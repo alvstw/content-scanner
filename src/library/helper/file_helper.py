@@ -2,8 +2,6 @@ import os
 from os import path
 from typing import List
 
-from setuptools import unicode_utils
-
 from src.exception.file_exception import PathNotFoundException, PermissionDeniedException
 
 
@@ -94,28 +92,3 @@ class FileHelper:
     def createDirectoryIfNotExist(folderPath: str):
         if not os.path.exists(folderPath):
             os.makedirs(folderPath)
-
-    @staticmethod
-    def isSafePath(pathName):
-        enc_warn = "'%s' not %s encodable -- skipping"
-
-        # To avoid accidental trans-codings errors, first to unicode
-        u_path = unicode_utils.filesys_decode(pathName)
-        if u_path is None:
-            # log.warn("'%s' in unexpected encoding -- skipping" % path)
-            return False
-
-        # Must ensure utf-8 encodability
-        utf8_path = unicode_utils.try_encode(u_path, "utf-8")
-        if utf8_path is None:
-            # log.warn(enc_warn, path, 'utf-8')
-            return False
-
-        try:
-            # accept is either way checks out
-            if os.path.exists(u_path) or os.path.exists(utf8_path):
-                return True
-        # this will catch any encode errors decoding u_path
-        except UnicodeEncodeError:
-            return False
-            # log.warn(enc_warn, path, sys.getfilesystemencoding())

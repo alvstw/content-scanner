@@ -29,10 +29,7 @@ class SearchService:
             pbar.set_description('Reading')
             for file in fileList:
                 pbar.update(1)
-                if FileHelper.isSafePath(file):
-                    context.messageHelper.print(f'Reading: {file}')
-                else:
-                    context.messageHelper.print(f'Reading: ***')
+                context.messageHelper.log(f'Reading: {file}')
 
                 # TODO: handle file type based on extension
                 fileType = FileType.rpaFile
@@ -65,10 +62,7 @@ class SearchService:
                 currentDirectory = pendingDirectoryList.pop(0)
                 currentDepth = FileHelper.getDepth(currentDirectory)
 
-                if FileHelper.isSafePath(currentDirectory):
-                    context.messageHelper.print(f'Discovering: {currentDirectory}')
-                else:
-                    context.messageHelper.print(f'Discovering: ***')
+                context.messageHelper.log(f'Discovering: {currentDirectory}')
 
                 pbar.update(1)  # scan one directory
                 # Look for the directory from the current directory and add them to pendingForDiscoveryList
@@ -76,16 +70,10 @@ class SearchService:
                     fileOnlyList = SearchService.listDirectory(currentDirectory, excludeDirectory=True)
                     directoryOnlyList = SearchService.listDirectory(currentDirectory, excludeFile=True)
                 except PathNotFoundException:
-                    if FileHelper.isSafePath(currentDirectory):
-                        context.messageHelper.print(f'File not found: {currentDirectory}')
-                    else:
-                        context.messageHelper.print(f'File not found: ***')
+                    context.messageHelper.print(f'File not found: {currentDirectory}')
                     continue
                 except PermissionDeniedException:
-                    if FileHelper.isSafePath(currentDirectory):
-                        context.messageHelper.print(f'Permission denied: {currentDirectory}')
-                    else:
-                        context.messageHelper.print(f'Permission denied: ***')
+                    context.messageHelper.print(f'Permission denied: {currentDirectory}')
                     continue
 
                 # if next level is within the allowed depth
