@@ -17,7 +17,13 @@ class FileHelper:
     @staticmethod
     def listDirectory(directoryPath: str, returnFullPath: bool = False) -> List[str]:
         try:
-            rs = os.listdir(directoryPath)
+            rs: List[str] = []
+            for root, dirs, files in FileHelper.walkDirectory(directoryPath):
+                for name in files:
+                    rs.append(os.path.join(root, name))
+                for name in dirs:
+                    rs.append(os.path.join(root, name))
+
             if returnFullPath:
                 fullPath = FileHelper.getAbsolutePath(directoryPath)
                 for n in range(len(rs)):
@@ -27,6 +33,17 @@ class FileHelper:
             raise PathNotFoundException
         except PermissionError:
             raise PermissionDeniedException
+
+    @staticmethod
+    def walkDirectory(directoryPath: str, level: int = 1):
+        directoryPath = directoryPath.rstrip(os.path.sep)
+        assert os.path.isdir(directoryPath)
+        num_sep = directoryPath.count(os.path.sep)
+        for root, dirs, files in os.walk(directoryPath):
+            yield root, dirs, files
+            num_sep_this = root.count(os.path.sep)
+            if num_sep + level <= num_sep_this:
+                del dirs[:]
 
     @staticmethod
     def getDirectoriesFromList(pathList: List[str]) -> List[str]:

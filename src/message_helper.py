@@ -62,7 +62,8 @@ class MessageHelper:
             ConsoleHelper.print(message)
         else:
             progressInstance.write(f'- {message}')
-        self.log(message=message, level=level, module=module)
+        if log:
+            self.log(message=message, level=level, module=module)
 
     def log(self, message: str, level: str = LoggingLevel.INFO, module: str = '') -> None:
         logger = self.logger
