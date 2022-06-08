@@ -29,7 +29,7 @@ class SearchService:
             pbar.set_description('Reading')
             for file in fileList:
                 pbar.update(1)
-                context.messageHelper.log(f'Reading: {file}')
+                context.messageHelper.print(f'Reading: {file}')
 
                 # TODO: handle file type based on extension
                 fileType = FileType.rpaFile
@@ -62,7 +62,7 @@ class SearchService:
                 currentDirectory = pendingDirectoryList.pop(0)
                 currentDepth = FileHelper.getDepth(currentDirectory)
 
-                context.messageHelper.log(f'Discovering: {currentDirectory}')
+                context.messageHelper.print(f'Discovering: {currentDirectory}')
 
                 pbar.update(1)  # scan one directory
                 # Look for the directory from the current directory and add them to pendingForDiscoveryList
