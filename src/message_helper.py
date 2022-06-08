@@ -5,6 +5,7 @@ from tqdm import tqdm
 
 from src.constant.general import FilePath, LoggingLevel
 from src.library.helper.console_helper import ConsoleHelper
+from src.library.helper.file_helper import FileHelper
 from src.library.helper.helper import Helper
 
 
@@ -26,7 +27,8 @@ class MessageHelper:
         self.version = Helper.getProjectMeta()['version']
 
         level = logging.INFO
-        logfile = f'{FilePath.LOG}/latest.log'
+        FileHelper.createDirectoryIfNotExist(FilePath.LOG)
+        logfile = FileHelper.joinPath(FilePath.LOG, 'latest.log')
 
         formatter = logging.Formatter('[%(levelname)-5s] [%(asctime)s] %(message)s')
         handler = logging.FileHandler(logfile)
