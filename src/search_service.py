@@ -34,7 +34,7 @@ class SearchService:
                 ):
                     matchedList.append(file)
             pbar.set_description('Read')
-        context.messageHelper.print(f'Search completed')
+        context.messageHelper.print(f'Search completed ({len(matchedList)} found)')
         return matchedList
 
     @staticmethod
