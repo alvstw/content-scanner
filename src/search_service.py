@@ -22,11 +22,15 @@ class SearchService:
     def searchKeyword(self, searchPath: str, keyword: str, depth: int = None, caseSensitive: bool = True) -> List[str]:
         matchedList: List[str] = []
         # TODO: handle search extension
-        fileList = SearchService.findFromDirectory(searchPath, searchDepth=depth, searchExtension=['.xaml'])
+        fileList = SearchService.findFromDirectory(
+            searchPath, searchDepth=depth, searchExtension=['.xaml'], excludedExtension=['.pyc']
+        )
         with ProgressBarContextManager(unit=' file', total=len(fileList)) as pbar:
             pbar.set_description('Reading')
             for file in fileList:
                 pbar.update(1)
+                context.messageHelper.log(f'Reading: {file}')
+
                 # TODO: handle file type based on extension
                 fileType = FileType.rpaFile
                 if self.searchDispatcher.performSearch(
@@ -58,14 +62,20 @@ class SearchService:
                 currentDirectory = pendingDirectoryList.pop(0)
                 currentDepth = FileHelper.getDepth(currentDirectory)
 
+                context.messageHelper.log(f'Discovering: {currentDirectory}')
+
                 pbar.update(1)  # scan one directory
                 # Look for the directory from the current directory and add them to pendingForDiscoveryList
                 try:
                     fileOnlyList = SearchService.listDirectory(currentDirectory, excludeDirectory=True)
                     directoryOnlyList = SearchService.listDirectory(currentDirectory, excludeFile=True)
-                except (PathNotFoundException, PermissionDeniedException):
+                except PathNotFoundException:
+                    context.messageHelper.print(f'File not found: {currentDirectory}')
+                    continue
+                except PermissionDeniedException:
                     context.messageHelper.print(f'Permission denied: {currentDirectory}')
                     continue
+
                 # if next level is within the allowed depth
                 if unlimitedDepth or currentDepth + 1 <= allowedDepth:
                     pendingDirectoryList.extend(directoryOnlyList)
