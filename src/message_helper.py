@@ -1,6 +1,8 @@
 import logging
 from typing import List
 
+from tqdm import tqdm
+
 from src.constant.general import FilePath, LoggingLevel
 from src.library.helper.console_helper import ConsoleHelper
 from src.library.helper.helper import Helper
@@ -17,6 +19,8 @@ class MessageHelper:
 
     mainLogger: logging.Logger
     logger: logging.Logger
+
+    _progressInstance: [tqdm, None] = None
 
     def __init__(self) -> None:
         self.version = Helper.getProjectMeta()['version']
@@ -39,8 +43,23 @@ class MessageHelper:
 
         logger.propagate = False
 
+    def setProgressInstance(self, instance: tqdm) -> None:
+        self._progressInstance = instance
+
+    def getProgressInstance(self) -> [tqdm, None]:
+        if self._progressInstance is not None:
+            return self._progressInstance
+        return None
+
+    def clearProgressInstance(self) -> None:
+        self._progressInstance = None
+
     def print(self, message: str = '', level: str = LoggingLevel.INFO, module: str = '', log: bool = True) -> None:
-        ConsoleHelper.print(message)
+        progressInstance: [tqdm, None] = self.getProgressInstance()
+        if progressInstance is None:
+            ConsoleHelper.print(message)
+        else:
+            progressInstance.write(f'- {message}')
         self.log(message=message, level=level, module=module)
 
     def log(self, message: str, level: str = LoggingLevel.INFO, module: str = '') -> None:

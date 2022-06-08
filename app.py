@@ -1,16 +1,13 @@
-from time import sleep
-from typing import List
-
 import typer
 from PyInquirer import prompt
-from tqdm import tqdm
 
 from src.constant.fileType import FileType
 from src.library.helper.data_helper import DataHelper
 from src.library.helper.validate_helper import ValidateHelper
+from src.report_service import ReportService
+from src.search_service import SearchService
 from src.validator.console.path_validator import PathValidator
 from src.validator.console.positive_number_validator import PositiveNumberValidator
-from src.message_helper import MessageHelper
 
 
 def main():
@@ -31,10 +28,11 @@ def main():
                     'checked': True
                 },
                 {
-                    'name': FileType.excelFile
+                    'name': FileType.excelFile,
+                    'disabled': 'Currently not supported'
                 },
                 {
-                    'name': FileType.otherFIle
+                    'name': FileType.otherFIle,
                 }
             ],
         },
@@ -42,7 +40,7 @@ def main():
             'type': 'input',
             'name': 'scanKeyword',
             'message': 'Scan Keyword',
-            'validate': ValidateHelper.isEmpty
+            'validate': ValidateHelper.notEmpty
         },
         {
             'type': 'confirm',
@@ -52,8 +50,8 @@ def main():
         },
         {
             'type': 'input',
-            'name': 'scanLevel',
-            'message': 'Scan Level (0 = search every level)',
+            'name': 'scanDepth',
+            'message': 'Scan Level (0 = search every depth)',
             'default': '0',
             'validate': PositiveNumberValidator,
             'filter': DataHelper.convertToInteger
@@ -63,21 +61,20 @@ def main():
 
     answers = prompt(questions)
 
+    searchService: SearchService = SearchService()
+    reportService: ReportService = ReportService()
+
     scanDirectory: str = answers['scanDirectory']
-    scanTypes: List[str] = answers['scanTypes']
+    # TODO: read scan types from user input
+    # scanTypes: List[str] = answers['scanTypes']
     scanKeyword: str = answers['scanKeyword']
     caseSensitive: bool = answers['caseSensitive']
-    scanLevel: int = answers['scanLevel']
+    scanDepth: [int, None] = answers['scanDepth'] if answers['scanDepth'] != 0 else None
 
-    with tqdm(total=100) as pbar:
-        for i in range(100):
-            sleep(0.1)
-            pbar.update(1)
+    rs = searchService.searchKeyword(scanDirectory, scanKeyword, depth=scanDepth, caseSensitive=caseSensitive)
+    reportService.writeCSV(rs)
 
 
 if __name__ == "__main__":
-    # init
-    messageHelper = MessageHelper()
-
     # launch main program
     typer.run(main)

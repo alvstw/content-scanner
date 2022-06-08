@@ -11,6 +11,10 @@ class ValidateHelper:
         return True
 
     @staticmethod
+    def notEmpty(value: Any) -> bool:
+        return not ValidateHelper.isEmpty(value)
+
+    @staticmethod
     def isString(value: Any) -> bool:
         # noinspection PyBroadException
         try:

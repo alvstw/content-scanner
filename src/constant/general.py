@@ -1,5 +1,6 @@
 class FilePath:
     LOG = './log'
+    DATA = './data'
 
 
 class LoggingLevel:
