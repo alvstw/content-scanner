@@ -62,7 +62,8 @@ class MessageHelper:
         if progressInstance is None:
             ConsoleHelper.print(message)
         else:
-            progressInstance.write(f'- {message}')
+            formattedMessage, _ = ConsoleHelper.formatWithIndent(message)
+            progressInstance.write(formattedMessage)
         if log:
             self.log(message=message, level=level, module=module)
 

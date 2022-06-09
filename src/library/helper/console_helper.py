@@ -29,22 +29,31 @@ class ConsoleHelper:
             print()
             return 1
 
+        rs, lineCount = ConsoleHelper.formatWithIndent(message, prefix)
+        print(rs)
+        return lineCount
+
+    @staticmethod
+    def formatWithIndent(message: str, prefix: str = '- ') -> (str, int):
+        rs = ''
         indentSpace = ' ' * len(prefix)
-        bodyLineWidth = Helper.getTerminalWidth() - 4
+        bodyLineWidth = Helper.getTerminalWidth() - len(prefix)
         content = message.split('\n')
         isFirstLine = True
         lineCount = 0
-        for c in content:
+        for c, cHasMore in Helper.lookahead(content):
             lines = tr.wrap(c, width=bodyLineWidth)
-            for line in lines:
+            for line, lHasMore in Helper.lookahead(lines):
                 if isFirstLine:
-                    print(f'{prefix}{line}')
+                    rs += f'{prefix}{line}'
                     isFirstLine = False
+                    rs += '\n' if lHasMore else ''
                     lineCount += 1
                     continue
-                print(f'{indentSpace}{line}')
+                rs += f'{indentSpace}{line}'
+                rs += '\n' if cHasMore else ''
                 lineCount += 1
-        return lineCount
+        return rs, lineCount
 
     @staticmethod
     def input(desc=''):
