@@ -1,7 +1,9 @@
+from typing import List
+
 import typer
 from PyInquirer import prompt
 
-from src.constant.fileType import FileType
+from src.constant.fileType import RpaFileType, ExcelFileType, AllFileType, OtherFileType
 from src.library.helper.data_helper import DataHelper
 from src.library.helper.validate_helper import ValidateHelper
 from src.report_service import ReportService
@@ -20,19 +22,22 @@ def main():
         },
         {
             'type': 'checkbox',
-            'name': 'scanTypes',
+            'name': 'scanFileTypes',
             'message': 'Files Type',
             'choices': [
                 {
-                    'name': FileType.rpaFile,
+                    'name': AllFileType.name,
                     'checked': True
                 },
                 {
-                    'name': FileType.excelFile,
+                    'name': RpaFileType.name,
+                },
+                {
+                    'name': ExcelFileType.name,
                     'disabled': 'Currently not supported'
                 },
                 {
-                    'name': FileType.otherFIle,
+                    'name': OtherFileType.name,
                 }
             ],
         },
@@ -66,12 +71,13 @@ def main():
 
     scanDirectory: str = answers['scanDirectory']
     # TODO: read scan types from user input
-    # scanTypes: List[str] = answers['scanTypes']
+    scanFileTypes: List[str] = answers['scanFileTypes']
     scanKeyword: str = answers['scanKeyword']
     caseSensitive: bool = answers['caseSensitive']
     scanDepth: [int, None] = answers['scanDepth'] if answers['scanDepth'] != 0 else None
 
-    rs = searchService.searchKeyword(scanDirectory, scanKeyword, depth=scanDepth, caseSensitive=caseSensitive)
+    rs = searchService.searchKeyword(scanDirectory, scanKeyword, scanFileTypes=scanFileTypes, depth=scanDepth,
+                                     caseSensitive=caseSensitive)
     reportService.writeCSV(rs)
 
 

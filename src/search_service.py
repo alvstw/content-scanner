@@ -1,16 +1,12 @@
 from typing import List
 
 from src import context
-from src.constant.fileType import FileType
+from src.constant.fileType import FileType, AllFileType, OtherFileType
 from src.context_manager.progress_bar_context_manager import ProgressBarContextManager
 from src.engine.search_dispatcher import SearchDispatcher
 from src.exception.file_exception import PathNotFoundException, PermissionDeniedException
+from src.extension_helper import ExtensionHelper
 from src.library.helper.file_helper import FileHelper
-
-
-class SearchStatus:
-    NOT_DISCOVERED = 'NOT_DISCOVERED'
-    TRANSVERSED = 'TRANSVERSED'
 
 
 class SearchService:
@@ -19,21 +15,34 @@ class SearchService:
     def __init__(self):
         self.searchDispatcher = SearchDispatcher()
 
-    def searchKeyword(self, searchPath: str, keyword: str, depth: int = None, caseSensitive: bool = True) -> List[str]:
+    def searchKeyword(self, searchPath: str, keyword: str, scanFileTypes: List[str] = None, depth: int = None,
+                      caseSensitive: bool = True) -> List[str]:
         matchedList: List[str] = []
-        # TODO: handle search extension
+
+        # Compile list of extensions to search
+        if ExtensionHelper.hasType(scanFileTypes, AllFileType):
+            searchExtension = None
+        else:
+            searchExtension = ExtensionHelper.getExtensionsFromNames(scanFileTypes)
+            if ExtensionHelper.hasType(scanFileTypes, OtherFileType):
+                searchExtension.append('')
+            searchExtension = searchExtension if len(searchExtension) != 0 else None
+
+        # Perform discovery
         fileList = SearchService.findFromDirectory(
-            searchPath, searchDepth=depth, searchExtension=['.xaml'], excludedExtension=['.pyc']
+            searchPath, searchDepth=depth, searchExtension=searchExtension
         )
+        # Perform search
         with ProgressBarContextManager(unit=' file', total=len(fileList)) as pbar:
             pbar.set_description('Reading')
             for file in fileList:
                 pbar.update(1)
                 context.messageHelper.print(f'Reading: {file}')
-
-                # TODO: handle file type based on extension
-                fileType = FileType.rpaFile
-                if self.searchDispatcher.performSearch(
+                fileType = ExtensionHelper.getFileTypeByPath(file)
+                if fileType is None:
+                    # Can't find file type associated with the extension
+                    continue
+                if self.searchDispatcher.fileContains(
                         filePath=file, fileType=fileType, searchValue=keyword, caseSensitive=caseSensitive
                 ):
                     matchedList.append(file)
