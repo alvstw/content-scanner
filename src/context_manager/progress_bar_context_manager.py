@@ -1,8 +1,10 @@
+from threading import Event
 from typing import Any
 
 from tqdm import tqdm
 
 from src import context
+from src.context import threadManager
 from src.utility.lock import Lock
 
 
@@ -12,12 +14,16 @@ class ProgressBarContextManager:
 
     _count: int
 
+    counterExitEvent: Event
+
     def __init__(self, *args, **kwargs):
         self._lock = Lock()
         self._tqdmInstance = tqdm(*args, **kwargs)
         context.messageHelper.setProgressInstance(self._tqdmInstance)
 
         self._count = 0
+
+        self.counterExitEvent = threadManager.ping(lambda: self.refresh())
 
     def __enter__(self):
         return self
@@ -38,5 +44,6 @@ class ProgressBarContextManager:
         return self._count
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.counterExitEvent.set()
         context.messageHelper.clearProgressInstance()
         self._tqdmInstance.close()

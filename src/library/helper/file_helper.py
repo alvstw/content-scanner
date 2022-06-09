@@ -8,17 +8,17 @@ from src.exception.file_exception import PathNotFoundException, PermissionDenied
 
 class FileHelper:
     @staticmethod
-    @lru_cache(maxsize=16)
+    @lru_cache(maxsize=32)
     def isFile(filePath: str) -> bool:
         return path.isfile(filePath)
 
     @staticmethod
-    @lru_cache(maxsize=16)
+    @lru_cache(maxsize=32)
     def isDirectory(directoryPath: str) -> bool:
         return path.isdir(directoryPath)
 
     @staticmethod
-    @lru_cache(maxsize=16)
+    @lru_cache(maxsize=32)
     def listDirectory(directoryPath: str, returnFullPath: bool = False) -> List[str]:
         try:
             rs: List[str] = []

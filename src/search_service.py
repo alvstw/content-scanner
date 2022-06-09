@@ -41,7 +41,6 @@ class SearchService:
         # Perform search
         with ProgressBarContextManager(unit=' file', total=len(fileList)) as pbar:
             pbar.setDescription('Reading')
-            exitEvent = threadManager.ping(lambda: pbar.refresh())
             # split the files for threads to run
             partList = ListHelper.split(fileList, self.threadCount)
             for part in partList:
@@ -56,7 +55,6 @@ class SearchService:
                 )
             threadManager.joinThreads(ThreadType.READ_FILE_THREAD)
             pbar.setDescription('Read')
-            exitEvent.set()
         context.messageHelper.print(f'Search completed ({len(matchedList)} found)')
         return matchedList
 
@@ -78,7 +76,6 @@ class SearchService:
 
         with ProgressBarContextManager(unit=' directory') as pbar:
             pbar.setDescription('Discovering')
-            exitEvent = threadManager.ping(lambda: pbar.refresh())
             for _ in range(threadCount):
                 threadManager.execute(
                     SearchService._discoverPathThread,
@@ -96,7 +93,6 @@ class SearchService:
                     break
             pbar.setDescription('Discovered')
             context.messageHelper.log(f'Discovered {pbar.getCount()}')
-            exitEvent.set()
 
         return resultList
 
@@ -176,4 +172,5 @@ class SearchService:
             if self.searchDispatcher.fileContains(
                     filePath=filePath, fileType=fileType, searchValue=searchValue, caseSensitive=caseSensitive
             ):
+                context.messageHelper.print(f'Found the keyword in: {filePath}')
                 matchedList.append(filePath)
