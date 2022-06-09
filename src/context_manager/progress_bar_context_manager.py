@@ -22,14 +22,17 @@ class ProgressBarContextManager:
     def __enter__(self):
         return self
 
-    def setDescription(self, description: str, refresh: bool = True):
+    def setDescription(self, description: str, refresh: bool = True) -> None:
         self._tqdmInstance.set_description(description, refresh)
 
-    def update(self, n: Any = 1):
+    def update(self, n: Any = 1) -> None:
         if isinstance(n, int) > 0:
             self._count += n
         with self._lock.getLock():
             self._tqdmInstance.update(n)
+
+    def refresh(self) -> None:
+        self._tqdmInstance.refresh()
 
     def getCount(self) -> int:
         return self._count

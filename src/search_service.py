@@ -2,6 +2,7 @@ from typing import List
 
 from src import context
 from src.constant.fileType import AllFileType, OtherFileType
+from src.context import threadManager
 from src.context_manager.progress_bar_context_manager import ProgressBarContextManager
 from src.engine.search_dispatcher import SearchDispatcher
 from src.exception.file_exception import PathNotFoundException, PermissionDeniedException
@@ -38,10 +39,9 @@ class SearchService:
             searchPath, searchDepth=depth, searchExtension=searchExtension, threadCount=self.threadCount
         )
         # Perform search
-        threadManager = ThreadManager()
-
         with ProgressBarContextManager(unit=' file', total=len(fileList)) as pbar:
             pbar.setDescription('Reading')
+            exitEvent = threadManager.ping(lambda _: pbar.refresh())
             # split the files for threads to run
             partList = ListHelper.split(fileList, self.threadCount)
             for part in partList:
@@ -56,8 +56,8 @@ class SearchService:
                 )
             threadManager.joinThreads(ThreadType.READ_FILE_THREAD)
             pbar.setDescription('Read')
+            exitEvent.set()
         context.messageHelper.print(f'Search completed ({len(matchedList)} found)')
-        threadManager.setExit()
         return matchedList
 
     @staticmethod
@@ -76,10 +76,9 @@ class SearchService:
         resultList: List[str] = []
         pendingDirectoryList: List[str] = [findPath]
 
-        threadManager: ThreadManager = ThreadManager()
-
         with ProgressBarContextManager(unit=' directory') as pbar:
             pbar.setDescription('Discovering')
+            exitEvent = threadManager.ping(lambda _: pbar.refresh())
             for _ in range(threadCount):
                 threadManager.execute(
                     SearchService._discoverPathThread,
@@ -97,8 +96,8 @@ class SearchService:
                     break
             pbar.setDescription('Discovered')
             context.messageHelper.log(f'Discovered {pbar.getCount()}')
+            exitEvent.set()
 
-        threadManager.setExit()
         return resultList
 
     @staticmethod

@@ -1,9 +1,8 @@
 import random
 import threading
 from time import sleep
-from typing import List, Any
+from typing import List, Any, Callable
 
-from src import context
 from src.constant.general import LockType
 from src.message_helper import MessageHelper
 from src.model.thread_data import ThreadData
@@ -14,6 +13,7 @@ class ThreadType:
     THREAD = 'Thread'
     READ_FILE_THREAD = 'ReadFileThread'
     DISCOVERY_THREAD = 'DiscoveryThread'
+    PING_THREAD = 'PingThread'
 
 
 class ThreadManager:
@@ -26,8 +26,8 @@ class ThreadManager:
 
     _exitEvent: threading.Event
 
-    def __init__(self, maxThread: int = 100) -> None:
-        self._messageHelper = context.messageHelper
+    def __init__(self, messageHelper: MessageHelper, maxThread: int = 100) -> None:
+        self._messageHelper = messageHelper
         self._threadDataList = []
         self._databaseThreads = []
 
@@ -38,7 +38,7 @@ class ThreadManager:
         threadWatcher.start()
 
     def add(self, thread: threading.Thread, name: Any = None, threadType: str = ThreadType.THREAD,
-            blockingLock=False) -> threading.Thread:
+            blockingLock=True) -> threading.Thread:
         if isinstance(name, str):
             thread.setName(name)
             self._threadDataList.append(ThreadData(thread, ThreadType.THREAD))
@@ -55,7 +55,7 @@ class ThreadManager:
         return thread
 
     def execute(self, target: Any, args: tuple = (), name: Any = None, threadType: str = ThreadType.THREAD,
-                blockingLock=False) \
+                blockingLock=True) \
             -> threading.Thread:
         args = (target,) + args
         if isinstance(name, str):
@@ -90,6 +90,20 @@ class ThreadManager:
 
     def setExit(self) -> None:
         self._exitEvent.set()
+
+    def ping(
+            self, call: Callable, exitEvent: threading.Event = threading.Event(), interval: float = 1, *args
+    ) -> threading.Event:
+        args = (call, exitEvent, interval,) + args
+        self.execute(self._pinger, args=args, threadType=ThreadType.PING_THREAD)
+        return exitEvent
+
+    def _pinger(self, call: Callable, exitEvent: threading.Event, interval: float = 1, *args, **kwargs) -> None:
+        while True:
+            if exitEvent.is_set():
+                return
+            sleep(interval)
+            call(*args, **kwargs)
 
     def _addCounter(self, threadType: str) -> int:
         counterList: List[int] = self._threadCounters.get(threadType, None)

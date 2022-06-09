@@ -4,6 +4,7 @@ import typer
 from PyInquirer import prompt
 
 from src.constant.fileType import RpaFileType, ExcelFileType, AllFileType, OtherFileType
+from src.context import threadManager
 from src.library.helper.data_helper import DataHelper
 from src.library.helper.validate_helper import ValidateHelper
 from src.report_service import ReportService
@@ -79,6 +80,8 @@ def main():
     rs = searchService.searchKeyword(scanDirectory, scanKeyword, scanFileTypes=scanFileTypes, depth=scanDepth,
                                      caseSensitive=caseSensitive)
     reportService.writeCSV(rs)
+
+    threadManager.setExit()
 
 
 if __name__ == "__main__":

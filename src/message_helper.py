@@ -28,7 +28,7 @@ class MessageHelper:
         FileHelper.createDirectoryIfNotExist(FilePath.LOG)
         logfile = FileHelper.joinPath(FilePath.LOG, 'latest.log')
 
-        formatter = logging.Formatter('[%(levelname)-5s] [%(asctime)s] %(message)s')
+        formatter = logging.Formatter('[%(threadName)-20s:%(levelname)-5s] [%(asctime)s] %(message)s')
         handler = logging.FileHandler(logfile)
         handler.setFormatter(formatter)
 
