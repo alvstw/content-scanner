@@ -132,6 +132,7 @@ class SearchService:
 
             pbar.update(1)  # scan one directory
             # Look for the directory from the current directory and add them to pendingForDiscoveryList
+            pbar.setDescription(f'Discovering (listing directory)')
             try:
                 fileOnlyList = SearchService.listDirectory(currentDirectory, excludeDirectory=True)
                 directoryOnlyList = SearchService.listDirectory(currentDirectory, excludeFile=True)
@@ -148,6 +149,7 @@ class SearchService:
                 pass
 
             # Look for the content from the current directory
+            pbar.setDescription(f'Discovering (performing checks)')
             for file in fileOnlyList:
                 extension = FileHelper.getFileExtension(file)
                 if excludedExtension is not None:
