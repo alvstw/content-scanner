@@ -1,5 +1,4 @@
 import logging
-from typing import List
 
 from tqdm import tqdm
 
@@ -8,24 +7,22 @@ from src.library.helper.console_helper import ConsoleHelper
 from src.library.helper.file_helper import FileHelper
 from src.library.helper.helper import Helper
 from src.library.helper.string_helper import StringHelper
+from src.utility.lock import Lock
 
 
 class MessageHelper:
-    appName: str = 'Content Scanner'
-    version: str
+    _appName: str = 'Content Scanner'
+    _version: str
 
-    symbol = ''
-    desc = ''
-    lineCount = 0
-    messages: List[str] = []
+    _logger: logging.Logger
 
-    mainLogger: logging.Logger
-    logger: logging.Logger
-
+    _lock: Lock
     _progressInstance: [tqdm, None] = None
 
     def __init__(self) -> None:
-        self.version = Helper.getProjectMeta()['version']
+        self._version = Helper.getProjectMeta()['version']
+
+        self._lock = Lock()
 
         level = logging.INFO
         FileHelper.createDirectoryIfNotExist(FilePath.LOG)
@@ -39,10 +36,10 @@ class MessageHelper:
         logger.setLevel(level)
         logger.addHandler(handler)
 
-        self.logger = logger
+        self._logger = logger
 
-        logger.info('-' * 20 + f' {self.appName} ' + '-' * 20)
-        logger.info(f'Version: {self.version}')
+        logger.info('-' * 20 + f' {self._appName} ' + '-' * 20)
+        logger.info(f'Version: {self._version}')
 
         logger.propagate = False
 
@@ -58,17 +55,18 @@ class MessageHelper:
         self._progressInstance = None
 
     def print(self, message: str = '', level: str = LoggingLevel.INFO, module: str = '', log: bool = True) -> None:
-        progressInstance: [tqdm, None] = self.getProgressInstance()
-        if progressInstance is None:
-            ConsoleHelper.print(message)
-        else:
-            formattedMessage, _ = ConsoleHelper.formatWithIndent(message)
-            progressInstance.write(formattedMessage)
-        if log:
-            self.log(message=message, level=level, module=module)
+        with self._lock.getLock():
+            progressInstance: [tqdm, None] = self.getProgressInstance()
+            if progressInstance is None:
+                ConsoleHelper.print(message)
+            else:
+                formattedMessage, _ = ConsoleHelper.formatWithIndent(message)
+                progressInstance.write(formattedMessage)
+            if log:
+                self.log(message=message, level=level, module=module)
 
     def log(self, message: str, level: str = LoggingLevel.INFO, module: str = '') -> None:
-        logger = self.logger
+        logger = self._logger
 
         message = StringHelper.filterString(message)
 

@@ -1,18 +1,39 @@
+from typing import Any
+
 from tqdm import tqdm
 
 from src import context
+from src.utility.lock import Lock
 
 
 class ProgressBarContextManager:
-    tqdmInstance: tqdm
+    _lock: Lock
+    _tqdmInstance: tqdm
+
+    _count: int
 
     def __init__(self, *args, **kwargs):
-        self.tqdmInstance = tqdm(*args, **kwargs)
-        context.messageHelper.setProgressInstance(self.tqdmInstance)
+        self._lock = Lock()
+        self._tqdmInstance = tqdm(*args, **kwargs)
+        context.messageHelper.setProgressInstance(self._tqdmInstance)
+
+        self._count = 0
 
     def __enter__(self):
-        return self.tqdmInstance
+        return self
+
+    def setDescription(self, description: str, refresh: bool = True):
+        self._tqdmInstance.set_description(description, refresh)
+
+    def update(self, n: Any = 1):
+        if isinstance(n, int) > 0:
+            self._count += n
+        with self._lock.getLock():
+            self._tqdmInstance.update(n)
+
+    def getCount(self) -> int:
+        return self._count
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         context.messageHelper.clearProgressInstance()
-        self.tqdmInstance.close()
+        self._tqdmInstance.close()

@@ -1,4 +1,5 @@
 import os
+from functools import lru_cache
 from os import path
 from typing import List
 
@@ -7,14 +8,17 @@ from src.exception.file_exception import PathNotFoundException, PermissionDenied
 
 class FileHelper:
     @staticmethod
+    @lru_cache(maxsize=16)
     def isFile(filePath: str) -> bool:
         return path.isfile(filePath)
 
     @staticmethod
+    @lru_cache(maxsize=16)
     def isDirectory(directoryPath: str) -> bool:
         return path.isdir(directoryPath)
 
     @staticmethod
+    @lru_cache(maxsize=16)
     def listDirectory(directoryPath: str, returnFullPath: bool = False) -> List[str]:
         try:
             rs: List[str] = []
