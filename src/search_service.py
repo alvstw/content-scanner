@@ -9,7 +9,7 @@ from src.exception.file_exception import PathNotFoundException, PermissionDenied
 from src.extension_helper import ExtensionHelper
 from src.library.helper.file_helper import FileHelper
 from src.library.helper.list_helper import ListHelper
-from src.thread_manager import ThreadManager, ThreadType
+from src.thread_manager import ThreadType
 
 
 class SearchService:
@@ -41,7 +41,7 @@ class SearchService:
         # Perform search
         with ProgressBarContextManager(unit=' file', total=len(fileList)) as pbar:
             pbar.setDescription('Reading')
-            exitEvent = threadManager.ping(lambda _: pbar.refresh())
+            exitEvent = threadManager.ping(lambda: pbar.refresh())
             # split the files for threads to run
             partList = ListHelper.split(fileList, self.threadCount)
             for part in partList:
@@ -78,7 +78,7 @@ class SearchService:
 
         with ProgressBarContextManager(unit=' directory') as pbar:
             pbar.setDescription('Discovering')
-            exitEvent = threadManager.ping(lambda _: pbar.refresh())
+            exitEvent = threadManager.ping(lambda: pbar.refresh())
             for _ in range(threadCount):
                 threadManager.execute(
                     SearchService._discoverPathThread,
