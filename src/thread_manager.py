@@ -92,18 +92,18 @@ class ThreadManager:
         self._exitEvent.set()
 
     def ping(
-            self, call: Callable, exitEvent: threading.Event = threading.Event(), interval: float = 1
+            self, call: Callable, exitEvent: threading.Event = threading.Event(), interval: float = 1, *args
     ) -> threading.Event:
-        args = (call, exitEvent, interval,)
+        args = (call, exitEvent, interval,) + args
         self.execute(self._pinger, args=args, threadType=ThreadType.PING_THREAD)
         return exitEvent
 
-    def _pinger(self, call: Callable, exitEvent: threading.Event, interval: float = 1) -> None:
+    def _pinger(self, call: Callable, exitEvent: threading.Event, interval: float = 1, *args, **kwargs) -> None:
         while True:
             if exitEvent.is_set():
                 return
             sleep(interval)
-            call()
+            call(*args, **kwargs)
 
     def _addCounter(self, threadType: str) -> int:
         counterList: List[int] = self._threadCounters.get(threadType, None)
