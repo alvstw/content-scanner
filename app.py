@@ -4,8 +4,9 @@ import typer
 from PyInquirer import prompt
 
 from src.constant.fileType import RpaFileType, ExcelFileType, AllFileType, OtherFileType
-from src.context import threadManager
+from src.context import threadManager, messageHelper
 from src.library.helper.data_helper import DataHelper
+from src.library.helper.file_helper import FileHelper
 from src.library.helper.validate_helper import ValidateHelper
 from src.report_service import ReportService
 from src.search_service import SearchService
@@ -70,6 +71,8 @@ def main():
     searchService: SearchService = SearchService()
     reportService: ReportService = ReportService()
 
+    debug = False
+
     scanDirectory: str = answers['scanDirectory']
     # TODO: read scan types from user input
     scanFileTypes: List[str] = answers['scanFileTypes']
@@ -79,7 +82,15 @@ def main():
 
     rs = searchService.searchKeyword(scanDirectory, scanKeyword, scanFileTypes=scanFileTypes, depth=scanDepth,
                                      caseSensitive=caseSensitive)
-    reportService.writeCSV(rs)
+    csvName = reportService.writeCSV(rs)
+
+    messageHelper.print(f'Saved result to: {csvName}')
+
+    if debug:
+        messageHelper.print(f'Debug Info:')
+        messageHelper.print(f'FileHelper.isFile: {FileHelper.isFile.cache_info()}')
+        messageHelper.print(f'FileHelper.isDirectory: {FileHelper.isDirectory.cache_info()}')
+        messageHelper.print(f'FileHelper.listDirectory: {FileHelper.listDirectory.cache_info()}')
 
     threadManager.setExit()
 

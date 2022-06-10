@@ -11,10 +11,13 @@ class ReportService:
     def __init__(self):
         FileHelper.createDirectoryIfNotExist(FilePath.DATA)
 
-    def writeCSV(self, matchedList: List[str]) -> None:
+    def writeCSV(self, matchedList: List[str]) -> str:
         dataDict = {
             'Matched File': matchedList
         }
         df = pd.DataFrame(data=dataDict)
         filePath = FileHelper.joinPath(FilePath.DATA, TimeHelper.formatTime(fmt='%Y-%m-%d %H%M'))
-        df.to_csv(f'{filePath}.csv')
+        filePath = f'{filePath}.csv'
+        df.to_csv(filePath)
+
+        return filePath

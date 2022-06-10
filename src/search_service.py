@@ -3,8 +3,10 @@ from typing import List
 from src import context
 from src.constant.fileType import AllFileType, OtherFileType
 from src.context import threadManager
+from src.context_manager.log_error import LogError
 from src.context_manager.progress_bar_context_manager import ProgressBarContextManager
 from src.engine.search_dispatcher import SearchDispatcher
+from src.exception.app_exception import UnexpectedException
 from src.exception.file_exception import PathNotFoundException, PermissionDeniedException
 from src.extension_helper import ExtensionHelper
 from src.library.helper.file_helper import FileHelper
@@ -98,12 +100,16 @@ class SearchService:
 
     @staticmethod
     def listDirectory(directoryPath: str, excludeDirectory: bool = False, excludeFile: bool = False) -> List[str]:
-        try:
-            directoryContent = FileHelper.listDirectory(directoryPath, returnFullPath=True)
-        except PathNotFoundException:
-            raise PathNotFoundException
-        except PermissionDeniedException:
-            raise PermissionDeniedException
+        with LogError(noRaise=True):
+            try:
+                directoryContent = FileHelper.listDirectory(directoryPath, returnFullPath=True)
+            except PathNotFoundException:
+                raise PathNotFoundException
+            except PermissionDeniedException:
+                raise PermissionDeniedException
+
+        if not isinstance(directoryContent, list):
+            raise UnexpectedException
 
         directoryList: List[str] = []
         fileList: List[str] = []
@@ -141,6 +147,9 @@ class SearchService:
                 return
             except PermissionDeniedException:
                 context.messageHelper.print(f'Permission denied: {currentDirectory}')
+                return
+            except UnexpectedException:
+                context.messageHelper.print(f'Unexpected error: {currentDirectory}')
                 return
 
                 # if next level is within the allowed depth
