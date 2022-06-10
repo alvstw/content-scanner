@@ -100,6 +100,7 @@ class SearchService:
 
     @staticmethod
     def listDirectory(directoryPath: str, excludeDirectory: bool = False, excludeFile: bool = False) -> List[str]:
+        directoryContent: List[str] = None
         with LogError(noRaise=True):
             try:
                 directoryContent = FileHelper.listDirectory(directoryPath, returnFullPath=True)
