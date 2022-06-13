@@ -198,3 +198,4 @@ class SearchService:
             ):
                 context.messageHelper.print(f'Found the keyword in: {filePath}')
                 matchedList.append(filePath)
+                pbar.setPostfix(f'{len(matchedList)} files found')
