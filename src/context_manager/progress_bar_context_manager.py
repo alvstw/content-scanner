@@ -40,6 +40,15 @@ class ProgressBarContextManager:
         with self._lock.getLock():
             self._tqdmInstance.update(n)
 
+    def updateTotal(self, value: Any) -> None:
+        self._tqdmInstance.total = value
+
+    def addTotal(self, value: int) -> int:
+        total = self._tqdmInstance.total if self._tqdmInstance.total is not None else 0
+        total += value
+        self._tqdmInstance.total = total
+        return total
+
     def refresh(self) -> None:
         self._tqdmInstance.refresh()
 

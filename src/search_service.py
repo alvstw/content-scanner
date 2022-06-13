@@ -168,7 +168,7 @@ class SearchService:
                 # if next level is within the allowed depth
             if unlimitedDepth or currentDepth + 1 <= allowedDepth:
                 pendingDirectoryList.extend(directoryOnlyList)
-                pass
+                pbar.addTotal(len(directoryOnlyList))
 
             # Look for the content from the current directory
             for file in fileOnlyList:
