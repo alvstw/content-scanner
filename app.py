@@ -50,6 +50,12 @@ def main():
             'validate': ValidateHelper.notEmpty
         },
         {
+            'type': 'input',
+            'name': 'exclusionRule',
+            'message': 'Exclusion Rule',
+            'validate': lambda value: value == '' or ValidateHelper.isValidRegex(value)
+        },
+        {
             'type': 'confirm',
             'name': 'caseSensitive',
             'message': 'Case Sensitive',
@@ -74,14 +80,14 @@ def main():
     debug = False
 
     scanDirectory: str = answers['scanDirectory']
-    # TODO: read scan types from user input
     scanFileTypes: List[str] = answers['scanFileTypes']
     scanKeyword: str = answers['scanKeyword']
+    exclusionRule: str = answers['exclusionRule'] if answers['exclusionRule'] != '' else None
     caseSensitive: bool = answers['caseSensitive']
     scanDepth: [int, None] = answers['scanDepth'] if answers['scanDepth'] != 0 else None
 
-    rs = searchService.searchKeyword(scanDirectory, scanKeyword, scanFileTypes=scanFileTypes, depth=scanDepth,
-                                     caseSensitive=caseSensitive)
+    rs = searchService.searchKeyword(scanDirectory, scanKeyword, scanFileTypes=scanFileTypes,
+                                     exclusionRule=exclusionRule, depth=scanDepth, caseSensitive=caseSensitive)
     csvName = reportService.writeCSV(rs)
 
     messageHelper.print(f'Saved result to: {csvName}')

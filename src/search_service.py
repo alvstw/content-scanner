@@ -1,9 +1,9 @@
+import re
 from typing import List
 
 from src import context
 from src.constant.fileType import AllFileType, OtherFileType
 from src.context import threadManager
-from src.context_manager.log_error import LogError
 from src.context_manager.progress_bar_context_manager import ProgressBarContextManager
 from src.engine.search_dispatcher import SearchDispatcher
 from src.exception.app_exception import UnexpectedException
@@ -23,7 +23,8 @@ class SearchService:
 
         self.searchDispatcher = SearchDispatcher()
 
-    def searchKeyword(self, searchPath: str, keyword: str, scanFileTypes: List[str] = None, depth: int = None,
+    def searchKeyword(self, searchPath: str, keyword: str, scanFileTypes: List[str] = None,
+                      exclusionRule: [str, None] = None, depth: int = None,
                       caseSensitive: bool = True) -> List[str]:
         matchedList: List[str] = []
 
@@ -38,7 +39,8 @@ class SearchService:
 
         # Perform discovery
         fileList = SearchService.findFromDirectory(
-            searchPath, searchDepth=depth, searchExtension=searchExtension, threadCount=self.threadCount
+            searchPath, searchDepth=depth, searchExtension=searchExtension,
+            exclusionRule=exclusionRule, threadCount=self.threadCount
         )
         # Perform search
         with ProgressBarContextManager(unit=' file', total=len(fileList)) as pbar:
@@ -65,6 +67,7 @@ class SearchService:
             findPath: str,
             searchExtension: List[str] = None,
             excludedExtension: List[str] = None,
+            exclusionRule: str = None,
             searchDepth: [int, None] = None,
             threadCount: int = 10
     ) -> List[str]:
@@ -83,7 +86,7 @@ class SearchService:
                     SearchService._discoverPathThread,
                     threadType=ThreadType.DISCOVERY_THREAD,
                     args=(
-                        searchExtension, excludedExtension,
+                        searchExtension, excludedExtension, exclusionRule,
                         unlimitedDepth, allowedDepth, pendingDirectoryList, pbar,
                         resultList
                     ),
@@ -100,16 +103,13 @@ class SearchService:
 
     @staticmethod
     def listDirectory(directoryPath: str, excludeDirectory: bool = False, excludeFile: bool = False) -> List[str]:
-        directoryContent: List[str] = None
-        with LogError(noRaise=True):
-            try:
-                directoryContent = FileHelper.listDirectory(directoryPath, returnFullPath=True)
-            except PathNotFoundException:
-                raise PathNotFoundException
-            except PermissionDeniedException:
-                raise PermissionDeniedException
-
-        if not isinstance(directoryContent, list):
+        try:
+            directoryContent = FileHelper.listDirectory(directoryPath, returnFullPath=True)
+        except PathNotFoundException:
+            raise PathNotFoundException
+        except PermissionDeniedException:
+            raise PermissionDeniedException
+        except UnexpectedException:
             raise UnexpectedException
 
         directoryList: List[str] = []
@@ -127,7 +127,7 @@ class SearchService:
 
     @staticmethod
     def _discoverPathThread(
-            searchExtension: List[str], excludedExtension: List[str],
+            searchExtension: List[str], excludedExtension: List[str], exclusionRule: str,
             unlimitedDepth: bool, allowedDepth: int, pendingDirectoryList: List[str], pbar: ProgressBarContextManager,
             filteredFileList: List[str]
     ) -> None:
@@ -135,23 +135,35 @@ class SearchService:
             currentDirectory = pendingDirectoryList.pop(0)
             currentDepth = FileHelper.getDepth(currentDirectory)
 
+            # check against excluded keyword
+            if isinstance(exclusionRule, str):
+                try:
+                    pbar.setDescription(f'Discovering (Exclusion Rule: Enabled)')
+                    nDirectoryName = FileHelper.getDirectoryName(currentDirectory)
+                    if re.match(exclusionRule, nDirectoryName):
+                        context.messageHelper.print(f'Excluded directory: {currentDirectory}')
+                        continue
+                except re.error:
+                    exclusionRule = None
+                    pbar.setDescription(f'Discovering (Exclusion Rule: Disabled)')
+                    context.messageHelper.print('Exclusion rule is disabled due to error.')
+
             context.messageHelper.print(f'Discovering: {currentDirectory}')
 
             pbar.update(1)  # scan one directory
             # Look for the directory from the current directory and add them to pendingForDiscoveryList
-            pbar.setDescription(f'Discovering (Listing Directory)')
             try:
                 fileOnlyList = SearchService.listDirectory(currentDirectory, excludeDirectory=True)
                 directoryOnlyList = SearchService.listDirectory(currentDirectory, excludeFile=True)
             except PathNotFoundException:
                 context.messageHelper.print(f'File not found: {currentDirectory}')
-                return
+                continue
             except PermissionDeniedException:
                 context.messageHelper.print(f'Permission denied: {currentDirectory}')
-                return
+                continue
             except UnexpectedException:
                 context.messageHelper.print(f'Unexpected error: {currentDirectory}')
-                return
+                continue
 
                 # if next level is within the allowed depth
             if unlimitedDepth or currentDepth + 1 <= allowedDepth:
@@ -159,7 +171,6 @@ class SearchService:
                 pass
 
             # Look for the content from the current directory
-            pbar.setDescription(f'Discovering (Performing Checks)')
             for file in fileOnlyList:
                 extension = FileHelper.getFileExtension(file)
                 if excludedExtension is not None:
@@ -169,6 +180,7 @@ class SearchService:
                     if extension not in searchExtension:
                         continue
                 filteredFileList.append(file)
+                pbar.setPostfix(f'{len(filteredFileList)} files pending')
 
     def _readFileThread(
             self, filePathList: List[str],

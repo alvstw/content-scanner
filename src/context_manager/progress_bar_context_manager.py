@@ -31,6 +31,9 @@ class ProgressBarContextManager:
     def setDescription(self, description: str, refresh: bool = True) -> None:
         self._tqdmInstance.set_description(description, refresh)
 
+    def setPostfix(self, message='', refresh: bool = True) -> None:
+        self._tqdmInstance.set_postfix_str(message, refresh)
+
     def update(self, n: Any = 1) -> None:
         if isinstance(n, int) > 0:
             self._count += n

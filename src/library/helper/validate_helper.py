@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 
@@ -35,3 +36,12 @@ class ValidateHelper:
             if value >= 0:
                 return True
         return False
+
+    @staticmethod
+    def isValidRegex(value: str) -> bool:
+        try:
+            re.compile(value)
+            return True
+        except re.error:
+            return False
+
