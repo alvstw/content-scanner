@@ -3,6 +3,7 @@ from functools import lru_cache
 from os import path
 from typing import List
 
+from src.exception.app_exception import UnexpectedException
 from src.exception.file_exception import PathNotFoundException, PermissionDeniedException
 
 
@@ -20,23 +21,22 @@ class FileHelper:
     @staticmethod
     @lru_cache(maxsize=32)
     def listDirectory(directoryPath: str, returnFullPath: bool = False) -> List[str]:
-        try:
-            rs: List[str] = []
-            for root, dirs, files in FileHelper.walkDirectory(directoryPath):
-                for name in files:
-                    rs.append(os.path.join(root, name))
-                for name in dirs:
-                    rs.append(os.path.join(root, name))
+        from src.context_manager.log_error import LogError
+        with LogError(excludedExceptions=[FileNotFoundError, PermissionError]):
+            try:
+                rs = os.listdir(directoryPath)
 
-            if returnFullPath:
-                fullPath = FileHelper.getAbsolutePath(directoryPath)
-                for n in range(len(rs)):
-                    rs[n] = os.path.join(fullPath, rs[n])
-            return rs
-        except FileNotFoundError:
-            raise PathNotFoundException
-        except PermissionError:
-            raise PermissionDeniedException
+                if returnFullPath:
+                    fullPath = FileHelper.getAbsolutePath(directoryPath)
+                    for n in range(len(rs)):
+                        rs[n] = os.path.join(fullPath, rs[n])
+                return rs
+            except FileNotFoundError:
+                raise PathNotFoundException
+            except PermissionError:
+                raise PermissionDeniedException
+            except Exception:
+                raise UnexpectedException
 
     @staticmethod
     def walkDirectory(directoryPath: str, level: int = 1):
@@ -79,6 +79,12 @@ class FileHelper:
     def getFileExtension(filePath: str) -> str:
         _, fileExtension = os.path.splitext(filePath)
         return fileExtension.lower()
+
+    @staticmethod
+    def getDirectoryName(filePath: str) -> str:
+        filePath = filePath.rstrip('/')
+        _, directoryName = os.path.split(filePath)
+        return directoryName
 
     @staticmethod
     def getAbsolutePath(relativePath: str) -> str:
