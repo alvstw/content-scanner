@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "content-scanner"
-version = "0.1.0"
+name = "scanner"
+version = "0.1.1"
 description = ""
 authors = ["Alvin So <r.alvso@icloud.com>"]
 
