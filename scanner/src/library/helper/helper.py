@@ -3,6 +3,7 @@ from collections import defaultdict
 from datetime import date, datetime
 from json import JSONEncoder
 
+import pkg_resources
 import tomlkit as tomlkit
 
 
@@ -13,6 +14,13 @@ class Helper:
             file_contents = pyproject.read()
 
         return tomlkit.parse(file_contents)['tool']['poetry']
+
+    @staticmethod
+    def getProjectVersion():
+        try:
+            return Helper.getProjectMeta()['version']
+        except FileNotFoundError:
+            return pkg_resources.get_distribution('scanner').version
 
     @staticmethod
     def nestedDict(n, datatype):

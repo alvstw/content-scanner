@@ -20,7 +20,7 @@ class MessageHelper:
     _progressInstance: [tqdm, None] = None
 
     def __init__(self) -> None:
-        self._version = Helper.getProjectMeta()['version']
+        self._version = Helper.getProjectVersion()
 
         self._lock = Lock()
 
