@@ -1,3 +1,4 @@
+import sys
 from typing import List
 
 import typer
@@ -73,6 +74,10 @@ def main():
     ]
 
     answers = prompt(questions)
+
+    if len(answers) == 0:
+        threadManager.setExit()
+        sys.exit(1)
 
     searchService: SearchService = SearchService()
     reportService: ReportService = ReportService()
