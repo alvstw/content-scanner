@@ -1,9 +1,11 @@
 import re
+from time import sleep
 from typing import List
 
 from scanner.src import context
 from scanner.src.constant.fileType import AllFileType, OtherFileType
-from scanner.src.context import threadManager
+from scanner.src.context import threadManager, discoveryPhaseThreadCount, readingPhaseThreadCount, \
+    discoveryPhaseIdleLock, discoveryPhaseExitEvent
 from scanner.src.context_manager.progress_bar_context_manager import ProgressBarContextManager
 from scanner.src.engine.search_dispatcher import SearchDispatcher
 from scanner.src.exception.app_exception import UnexpectedException
@@ -15,12 +17,9 @@ from scanner.src.thread_manager import ThreadType
 
 
 class SearchService:
-    threadCount: int
     searchDispatcher: SearchDispatcher
 
-    def __init__(self, threadCount: int = 10):
-        self.threadCount = threadCount
-
+    def __init__(self):
         self.searchDispatcher = SearchDispatcher()
 
     def searchKeyword(self, searchPath: str, keyword: str, scanFileTypes: List[str] = None,
@@ -40,13 +39,13 @@ class SearchService:
         # Perform discovery
         fileList = SearchService.findFromDirectory(
             searchPath, searchDepth=depth, searchExtension=searchExtension,
-            exclusionRule=exclusionRule, threadCount=self.threadCount
+            exclusionRule=exclusionRule, threadCount=discoveryPhaseThreadCount
         )
         # Perform search
         with ProgressBarContextManager(unit=' file', total=len(fileList)) as pbar:
             pbar.setDescription('Reading')
             # split the files for threads to run
-            partList = ListHelper.split(fileList, self.threadCount)
+            partList = ListHelper.split(fileList, readingPhaseThreadCount)
             for part in partList:
                 threadManager.execute(
                     self._readFileThread,
@@ -131,7 +130,28 @@ class SearchService:
             unlimitedDepth: bool, allowedDepth: int, pendingDirectoryList: List[str], pbar: ProgressBarContextManager,
             filteredFileList: List[str]
     ) -> None:
-        while len(pendingDirectoryList) != 0:
+        idleLockedThread: bool = False
+        idleCheckDelay: int = 5
+        while True:
+            if discoveryPhaseExitEvent.is_set():
+                return
+            if len(pendingDirectoryList) == 0:
+                if idleLockedThread:
+                    sleep(idleCheckDelay)
+                    continue
+                if discoveryPhaseIdleLock.acquire(blocking=False):
+                    idleLockedThread = True
+                    context.messageHelper.log(f'The thread is idle')
+                    continue
+                else:
+                    context.messageHelper.log(f'An exit event is triggered')
+                    discoveryPhaseExitEvent.set()
+                    return
+            else:
+                if idleLockedThread:
+                    idleLockedThread = False
+                    discoveryPhaseIdleLock.release()
+
             currentDirectory = pendingDirectoryList.pop(0)
             currentDepth = FileHelper.getDepth(currentDirectory)
 
@@ -142,6 +162,7 @@ class SearchService:
                     nDirectoryName = FileHelper.getDirectoryName(currentDirectory)
                     if re.match(exclusionRule, nDirectoryName):
                         context.messageHelper.print(f'Excluded directory: {currentDirectory}')
+                        pbar.update(1)  # skip one directory
                         continue
                 except re.error:
                     exclusionRule = None
