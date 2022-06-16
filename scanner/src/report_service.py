@@ -13,7 +13,7 @@ class ReportService:
 
     def writeCSV(self, matchedList: List[str]) -> str:
         dataDict = {
-            'Matched File': matchedList
+            'FullPath': matchedList
         }
         df = pd.DataFrame(data=dataDict)
         filePath = FileHelper.joinPath(FilePath.DATA, TimeHelper.formatTime(fmt='%Y-%m-%d %H%M'))
